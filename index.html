@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>연애 동물 테스트 💕</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
+  <style>
+    * { font-family: 'Pretendard', -apple-system, sans-serif; -webkit-tap-highlight-color: transparent; }
+    .gradient-bg { background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%); }
+    .gradient-bg-blue { background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%); }
+    .gradient-bg-gold { background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%); }
+    .gradient-bg-green { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+    .gradient-bg-couple { background: linear-gradient(135deg, #ec4899 0%, #f43f5e 50%, #8b5cf6 100%); }
+    .gradient-light-a { background: linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%); }
+    .gradient-light-b { background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%); }
+    @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+    @keyframes pulse-glow { 0%, 100% { box-shadow: 0 0 20px rgba(236,72,153,0.4); } 50% { box-shadow: 0 0 40px rgba(236,72,153,0.8); } }
+    @keyframes heartbeat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+    .float { animation: float 2s ease-in-out infinite; }
+    .pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+    .heartbeat { animation: heartbeat 1s ease-in-out infinite; }
+    .blur-lock { filter: blur(8px); user-select: none; pointer-events: none; }
+    .choice-btn { transition: all 0.2s ease; }
+    .choice-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
+    .choice-btn:active { transform: scale(0.98); }
+    .expand-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
+    .expand-content.open { max-height: 500px; }
+  </style>
+</head>
+<body class="bg-gradient-to-b from-pink-50 via-white to-purple-50 min-h-screen">
+  <div id="app"></div>
+
+  <script>
+    // ============================================
+    // 설정
+    // ============================================
+    var SUPABASE_URL = 'https://jtdonrpoopvmqqpkuzeu.supabase.co';
+    var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp0ZG9ucnBvb3B2bXFxcGt1emV1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkxNTU1MjMsImV4cCI6MjA4NDczMTUyM30.aUuu1mEE3oCYgvbfggx7zLbSxEcbqR2SOX5MRZ6TJ7Y';
+    var db = null;
+    try { db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); } catch(e) {}
+
+    var LATPEED = {
+      compatibility: 'https://www.latpeed.com/products/iZSJY',
+      premium: 'https://www.latpeed.com/products/StAva',
+      bundle: 'https://www.latpeed.com/products/BPZPm'
+    };
+
+    var params = new URLSearchParams(location.search);
+    var paidType = params.get('paid');
+    var inviteCode = params.get('invite');
+
+    // ============================================
+    // 질문 35개
+    // ============================================
+    var freeQuestions = [
+      { id: 1, cat: '애착', q: '연인이 갑자기 연락이 안 돼요 (3시간째)', a: '📱 계속 전화 + "왜 안받아ㅠ"', b: '😌 "바쁜가보다" 기다림', axis: 'attach' },
+      { id: 2, cat: '헌신', q: '연인이 새벽에 아파서 전화했어요', a: '🏃 당장 택시타고 감', b: '💊 "약 먹고 자, 내일 볼게"', axis: 'devote' },
+      { id: 3, cat: '소통', q: '연인이 "아무것도 아니야"라고 해요', a: '🔍 "아닌 거 다 알아, 말해봐"', b: '🤝 "알겠어, 말하고 싶을 때 해"', axis: 'comm' },
+      { id: 4, cat: '갈등', q: '심하게 싸운 직후, 당신은?', a: '🔥 바로 화해하고 끝내야 함', b: '❄️ 며칠 냉각기 필요', axis: 'conflict' },
+      { id: 5, cat: '라이프', q: '이상적인 주말 데이트는?', a: '🏔️ 새로운 곳 탐험', b: '🏠 집에서 같이 뒹굴기', axis: 'life' },
+      { id: 6, cat: '가치관', q: '연인이 친구들이랑 술자리, 당신은?', a: '🙋 "나도 갈래!" 합류', b: '👋 "재밌게 놀아~" 각자 시간', axis: 'life' },
+      { id: 7, cat: '표현', q: '사랑 표현 방식은?', a: '💬 "사랑해" 하루 10번', b: '🎁 행동/선물로 보여줌', axis: 'love' },
+      { id: 8, cat: '친밀', q: '스킨십 스타일은?', a: '🤗 수시로 손잡고 안고', b: '😊 분위기 좋을 때 적당히', axis: 'intimate' },
+      { id: 9, cat: '미래', q: '연애 1년 후, 대화 주제는?', a: '💒 결혼/미래 구체적 계획', b: '🎉 "오늘 뭐 먹지?" 현재 집중', axis: 'life' },
+      { id: 10, cat: '신뢰', q: '연인이 이성 친구와 둘이 밥 먹는대요', a: '😤 솔직히 좀 신경 쓰임', b: '😊 "맛있는 거 먹어~" 신뢰', axis: 'attach' }
+    ];
+
+    var premiumQuestions = [
+      { id: 11, cat: '애착', q: '연인이 "요즘 너무 지쳐"라고 해요', a: '🏥 휴가내고 여행 데려감', b: '🍜 맛있는 거 사다주고 응원', axis: 'devote' },
+      { id: 12, cat: '애착', q: '연인의 과거 연애 이야기, 듣고 싶어요?', a: '📖 다 알고 싶음, 숨기지마', b: '🔒 과거는 과거, 안 궁금', axis: 'attach' },
+      { id: 13, cat: '헌신', q: '연인이 꿈을 위해 1년 해외 가야 해요', a: '✈️ 같이 가거나 기다림', b: '💔 현실적으로 힘들 듯', axis: 'devote' },
+      { id: 14, cat: '경계', q: '연인에게 절대 숨기면 안 되는 건?', a: '📱 핸드폰 비번까지 공유', b: '🤫 각자 프라이버시 존중', axis: 'attach' },
+      { id: 15, cat: '감정', q: '연인이 실수로 내 마음을 상하게 했어요', a: '😢 바로 말함 "그거 상처야"', b: '😶 참고 넘어감 (별거 아님)', axis: 'comm' },
+      { id: 16, cat: '미래', q: '결혼 얘기, 언제부터 해도 될까요?', a: '💍 6개월 안에 방향은 알아야', b: '🌱 자연스럽게 흘러가는 대로', axis: 'life' },
+      { id: 17, cat: '독점', q: '연인이 나보다 친구를 더 챙기는 느낌', a: '😤 솔직히 말함 "나 서운해"', b: '🙂 이해함, 친구도 중요하지', axis: 'attach' },
+      { id: 18, cat: '토론', q: '연인과 의견이 완전 반대일 때', a: '🗣️ 열띤 토론! 설득해야지', b: '🤝 "그럴 수 있지" 양보', axis: 'comm' },
+      { id: 19, cat: '방어', q: '연인이 "너 요즘 왜 그래?"라고 해요', a: '😠 "뭐가? 너나 잘해" 방어', b: '🤔 "내가 뭘 잘못했지?" 수용', axis: 'conflict' },
+      { id: 20, cat: '위기', q: '싸우다가 연인이 "헤어지자"고 해요', a: '😱 "진심이야?!" 심각 대화', b: '😤 "알았어 그래!" 받아침', axis: 'conflict' },
+      { id: 21, cat: '공간', q: '연인이 계속 한숨만 쉬어요', a: '🔍 "왜? 무슨 일이야?" 캐물음', b: '🤗 안아주고 기다림', axis: 'comm' },
+      { id: 22, cat: '사과', q: '사과할 때 당신의 스타일은?', a: '💬 "미안해" 말로 진심 전달', b: '🍽️ 맛있는 거 사주며 행동으로', axis: 'love' },
+      { id: 23, cat: '공간', q: '연인이 "혼자 있고 싶어"라고 해요', a: '😰 불안함... 왜지? 내 탓?', b: '👍 "그래 연락해~" 쿨하게', axis: 'attach' },
+      { id: 24, cat: '금전', q: '돈 쓰는 스타일은?', a: '💸 YOLO! 지금 행복이 중요', b: '🏦 미래 위해 저축 우선', axis: 'life' },
+      { id: 25, cat: '계획', q: '여행 계획은?', a: '📋 숙소/맛집 다 예약해둠', b: '🎲 가서 정하자! 즉흥', axis: 'life' },
+      { id: 26, cat: '분담', q: '집안일 분담은?', a: '⚖️ 50:50 공평하게', b: '💪 잘하는 사람이 더 하기', axis: 'life' },
+      { id: 27, cat: '반려', q: '반려동물 키우고 싶어요?', a: '🐶 무조건! 이미 이름도 지음', b: '😅 책임감 부담... 나중에', axis: 'life' },
+      { id: 28, cat: '가족', q: '명절에 양가 방문은?', a: '👨‍👩‍👧 당연히 둘 다 가야지', b: '🏠 번갈아가며 or 각자', axis: 'life' },
+      { id: 29, cat: '취미', q: '각자 취미 시간은?', a: '🎮 함께하는 취미가 좋아', b: '🎨 각자 시간도 필요해', axis: 'life' },
+      { id: 30, cat: '주도', q: '스킨십 시작은 누가?', a: '😏 내가 먼저 다가감', b: '😊 분위기 보고 자연스럽게', axis: 'intimate' },
+      { id: 31, cat: '빈도', q: '이상적인 친밀감 빈도는?', a: '🔥 가능하면 자주!', b: '🌙 분위기 좋을 때 가끔', axis: 'intimate' },
+      { id: 32, cat: '시도', q: '새로운 시도에 대해?', a: '🎭 실험 환영! 재밌겠다', b: '🛏️ 익숙한 게 편하고 좋아', axis: 'intimate' },
+      { id: 33, cat: '중요', q: '친밀한 관계에서 중요한 건?', a: '💕 감정 교류와 분위기', b: '🎯 서로의 만족', axis: 'intimate' },
+      { id: 34, cat: '거절', q: '거절당했을 때?', a: '😢 솔직히 서운함', b: '🙂 "그럴 수 있지" 이해', axis: 'intimate' },
+      { id: 35, cat: '이후', q: '이후 뭐 해요?', a: '🗣️ 대화하며 여운 즐김', b: '😴 바로 꿀잠zzz', axis: 'intimate' }
+    ];
+
+    // ============================================
+    // 이미지 URL 베이스
+    // ============================================
+    var IMG_BASE = 'https://raw.githubusercontent.com/mananim0628-source/love-animal-test/main/';
+
+    // ============================================
+    // 동물 8종 데이터
+    // ============================================
+    var animals = {
+      wolf: {
+        emoji: '🐺', name: '늑대 지킴이', color: '#6B7B8C',
+        slogan: '"내가 지켜줄게"',
+        img: { main: IMG_BASE + 'wolf_main.png.png', bed1: IMG_BASE + 'wolf_bed1.png.png', bed2: IMG_BASE + 'wolf_bed2.png.png', bed3: IMG_BASE + 'wolf_bed3.png.png' },
+        desc: '한번 마음 준 사람에게 올인하는 타입. 연인을 위해서라면 새벽에도 달려가고, 위험에서 보호하려는 본능이 강해요. 직설적으로 사랑을 표현하고, 헌신적인 모습에 연인이 감동받아요.',
+        traits: ['헌신적 보호', '직설적 표현', '강한 책임감', '독점욕 있음'],
+        idealMale: ['당신의 헌신을 알아주는 사람', '감정 표현이 솔직한 타입', '함께 성장하고 싶어하는 사람', '당신을 의지하면서도 자기 주관 있는 사람', '가끔 당신도 쉬게 해주는 배려심'],
+        idealFemale: ['든든하게 리드해주는 타입', '말보다 행동으로 보여주는 사람', '당신을 최우선으로 생각하는 사람', '같이 힘든 일도 헤쳐나갈 파트너', '솔직하게 마음 표현하는 사람'],
+        scenario: ['📅 평일: 퇴근 후 "오늘 어땠어?" 매일 체크콜', '🍽️ 주말: 직접 요리해주며 "맛있어?"', '😰 연인 힘들 때: 일단 달려가서 안아줌', '💕 표현: "너 아니면 안 돼" 직설적 고백'],
+        bed: [
+          { name: '따뜻한 보호형', pct: 65, desc: ['먼저 분위기 체크 "괜찮아?"', '연인 반응 살피며 리드', '끝나고 꼭 안아주기', '다음날 컨디션까지 챙김'] },
+          { name: '열정 폭발형', pct: 25, desc: ['감정 터지면 멈출 수 없음', '강렬하게 사랑 표현', '독점욕 폭발 "넌 내꺼야"'] },
+          { name: '은밀 독점형', pct: 10, desc: ['"넌 내꺼야" 속삭임', '마킹 본능', '질투심 자극에 반응'] }
+        ]
+      },
+      dolphin: {
+        emoji: '🐬', name: '돌고래 탐험가', color: '#7BC8E8',
+        slogan: '"같이 놀자!"',
+        img: { main: IMG_BASE + 'dolphin_main.png.png', bed1: IMG_BASE + 'dolphin_bed1.png.png', bed2: IMG_BASE + 'dolphin_bed2.png.png', bed3: IMG_BASE + 'dolphin_bed3.png.png' },
+        desc: '자유롭고 열정적인 에너지가 넘쳐요. 새로운 경험을 좋아하고, 연인과 함께 모험하는 걸 즐겨요. 사교성이 좋아서 연인 친구들과도 금방 친해지고, 분위기 메이커 역할을 해요.',
+        traits: ['자유로운 영혼', '열정적 에너지', '사교성 만렙', '새로운 시도 환영'],
+        idealMale: ['함께 모험할 수 있는 사람', '유머 감각 있는 타입', '질투 안 하고 믿어주는 사람', '서로 자유 존중하면서 사랑하는 관계', '매너리즘 없이 늘 새로운 사람'],
+        idealFemale: ['활발하고 긍정적인 에너지', '같이 여행 다니고 싶은 사람', '답답하게 안 하는 쿨한 타입', '친구들이랑도 잘 어울리는 사람', '웃음이 많은 밝은 타입'],
+        scenario: ['📅 평일: "오늘 퇴근하고 뭐해? 놀러가자!"', '✈️ 주말: 즉흥 여행 or 새로운 맛집 탐방', '🎉 모임: 연인 친구들과 자연스럽게 어울림', '💕 표현: 갑자기 백허그 + "보고싶었어"'],
+        bed: [
+          { name: '즉흥 모험형', pct: 60, desc: ['분위기 오면 장소 불문', '새로운 시도 항상 환영', '웃으면서 즐기는 스타일', '여행지에서 더 불타오름'] },
+          { name: '플레이풀형', pct: 30, desc: ['장난치며 분위기 업', '간지럽히기 놀이', '웃다가 진지해지기'] },
+          { name: '열정 폭풍형', pct: 10, desc: ['에너지 폭발', '체력 자랑', '땀 흘리며 운동처럼'] }
+        ]
+      },
+      panda: {
+        emoji: '🐼', name: '판다 힐러', color: '#A8D5A2',
+        slogan: '"괜찮아, 쉬어"',
+        img: { main: IMG_BASE + 'panda_main.png.png', bed1: IMG_BASE + 'panda_bed1.png.png', bed2: IMG_BASE + 'panda_bed2.png.png', bed3: IMG_BASE + 'panda_bed3.png.png' },
+        desc: '편안하고 따뜻한 존재감으로 연인을 힐링시켜요. 다툼보다 평화를 좋아하고, 연인이 지쳤을 때 최고의 안식처가 되어줘요. 급하게 밀어붙이지 않고 천천히 사랑을 쌓아가는 타입.',
+        traits: ['평화로운 분위기', '힐링 에너지', '갈등 회피', '느긋한 사랑'],
+        idealMale: ['편안하게 함께 있을 수 있는 사람', '급하지 않게 천천히 다가오는 타입', '큰 소리 안 내고 대화하는 사람', '집에서 뒹굴거려도 행복한 사람', '당신 페이스 존중해주는 배려심'],
+        idealFemale: ['따뜻하고 포근한 분위기', '잔소리보다 응원해주는 타입', '함께 있으면 편안한 사람', '느긋하게 사랑 표현하는 스타일', '힘들 때 안아주는 따뜻함'],
+        scenario: ['📅 평일: 각자 시간 보내다 잠들기 전 "잘 자"', '🏠 주말: 집에서 영화+치킨 뒹굴 데이트', '😰 연인 힘들 때: 말없이 안아주고 등 토닥', '💕 표현: 조용히 손잡고 "나 여기 있어"'],
+        bed: [
+          { name: '포근 안정형', pct: 70, desc: ['서두르지 않고 천천히', '감정 교류 중시', '안아주는 시간 김', '편안한 분위기가 최고'] },
+          { name: '따뜻 감성형', pct: 25, desc: ['은은한 조명 선호', '속삭이며 대화', '부드러운 터치'] },
+          { name: '숨은 열정형', pct: 5, desc: ['가끔 의외의 적극성', '마음 열리면 달라짐', '반전 매력'] }
+        ]
+      },
+      lion: {
+        emoji: '🦁', name: '사자 리더', color: '#D4A574',
+        slogan: '"내가 이끌게"',
+        img: { main: IMG_BASE + 'lion_main.png.png', bed1: IMG_BASE + 'lion_bed1.png.png', bed2: IMG_BASE + 'lion_bed2.png.png', bed3: IMG_BASE + 'lion_bed3.png.png' },
+        desc: '카리스마 넘치는 리더십으로 연애도 주도해요. 결단력 있게 데이트를 계획하고, 연인을 대접하는 걸 좋아해요. 자존심이 강해서 무시당하면 상처받지만, 사랑하는 사람에겐 한없이 너그러워요.',
+        traits: ['강한 리더십', '결단력', '자존심', '너그러운 대접'],
+        idealMale: ['당신의 주도를 따라와 주는 사람', '가끔 귀엽게 응석부리는 타입', '당신 자존심 세워주는 센스', '공식석상에서 자랑할 수 있는 사람', '당신 노력을 알아주는 감사함'],
+        idealFemale: ['듬직하게 리드해주는 타입', '결정 잘 내리는 추진력', '당신을 공주처럼 대접', '자기 일에 열정적인 사람', '당당하고 자신감 있는 매력'],
+        scenario: ['📅 평일: "내일 저녁 예약해뒀어, 데리러 갈게"', '🍽️ 주말: 분위기 좋은 레스토랑 풀코스', '😰 연인 힘들 때: "걱정마, 내가 해결해줄게"', '💕 표현: 선물 공세 + "최고만 줄 거야"'],
+        bed: [
+          { name: '왕의 리드형', pct: 60, desc: ['자연스럽게 주도권', '연인 만족 우선', '자신감 있는 진행', '칭찬에 약함'] },
+          { name: '대접 서비스형', pct: 30, desc: ['연인을 위한 시간', '받는 것보다 주는 것', '상대 반응이 보상'] },
+          { name: '정복 열정형', pct: 10, desc: ['강렬한 에너지', '지배적 성향', '승부욕 발동'] }
+        ]
+      },
+      owl: {
+        emoji: '🦉', name: '올빼미 현자', color: '#8B6914',
+        slogan: '"천천히 생각해보자"',
+        img: { main: IMG_BASE + 'owl_main.png.png', bed1: IMG_BASE + 'owl_bed1.png.png', bed2: IMG_BASE + 'owl_bed2.png.png', bed3: IMG_BASE + 'owl_bed3.png.png' },
+        desc: '깊이 있는 대화를 좋아하고, 신중하게 관계를 발전시켜요. 급하게 달려들지 않고, 상대를 충분히 이해한 후 마음을 열어요. 말수는 적지만 할 말은 다 하고, 한번 마음 주면 끝까지 가요.',
+        traits: ['신중한 접근', '깊은 대화', '지적 매력', '진지한 사랑'],
+        idealMale: ['대화가 통하는 지적인 사람', '급하게 안 하고 기다려주는 타입', '혼자 시간도 이해해주는 사람', '깊은 이야기 나눌 수 있는 상대', '당신 내면을 알아봐주는 통찰력'],
+        idealFemale: ['생각이 깊은 사람', '수다보다 깊은 대화 선호', '당신 페이스 맞춰주는 인내심', '같이 책/영화 이야기할 수 있는 타입', '조용하지만 확실한 사랑 표현'],
+        scenario: ['📅 평일: 각자 시간 보내다 밤에 깊은 대화', '☕ 주말: 조용한 카페에서 책 읽기 데이트', '😰 연인 힘들 때: 조언보다 들어주기', '💕 표현: 오래 고민한 편지/선물'],
+        bed: [
+          { name: '깊은 교감형', pct: 60, desc: ['눈 맞춤 중시', '서두르지 않음', '감정 연결이 먼저', '대화하며 진행'] },
+          { name: '탐구 실험형', pct: 30, desc: ['이론적 접근', '새로운 방법 연구', '상대 반응 분석'] },
+          { name: '은밀 열정형', pct: 10, desc: ['겉과 다른 속', '마음 열면 적극적', '반전 매력'] }
+        ]
+      },
+      otter: {
+        emoji: '🦦', name: '수달 장난꾸러기', color: '#B8860B',
+        slogan: '"웃기지? ㅋㅋ"',
+        img: { main: IMG_BASE + 'otter_main.png.png', bed1: IMG_BASE + 'otter_bed1.png.png', bed2: IMG_BASE + 'otter_bed2.png.jpg', bed3: IMG_BASE + 'otter_bed3.png.png' },
+        desc: '유머와 장난으로 연애를 즐겁게 만들어요. 무거운 분위기를 싫어하고, 연인과 친구처럼 편하게 지내길 원해요. 애교도 잘 받아주고, 싸워도 웃기게 풀어버리는 해결사.',
+        traits: ['유머 만렙', '친구 같은 연인', '긍정 에너지', '갈등 해결사'],
+        idealMale: ['웃음 코드 맞는 사람', '장난 같이 쳐줄 수 있는 타입', '무거운 거 싫어하는 가벼운 성격', '당신 유머에 웃어주는 사람', '친구처럼 편한 사이 원하는 타입'],
+        idealFemale: ['유머 감각 있는 사람', '장난스럽게 애교 받아주는 타입', '같이 웃고 떠들 수 있는 사람', '심각한 거 싫어하는 밝은 성격', '텐션 맞춰주는 케미'],
+        scenario: ['📅 평일: 카톡으로 드립 배틀 ㅋㅋ', '🎮 주말: 게임 or 보드게임 내기', '😰 연인 힘들 때: 웃긴 영상 보내며 분위기 전환', '💕 표현: 갑자기 볼 쪽쪽 + "왜 이렇게 귀여워"'],
+        bed: [
+          { name: '플레이풀형', pct: 65, desc: ['웃으면서 시작', '장난스러운 분위기', '간지럽히기 놀이', '가벼운 터치'] },
+          { name: '친밀 케어형', pct: 25, desc: ['분위기 풀어주기', '긴장 완화 전문', '편안한 진행'] },
+          { name: '의외 진지형', pct: 10, desc: ['가끔 진지 모드', '눈 맞추면 달라짐', '숨겨진 열정'] }
+        ]
+      },
+      tiger: {
+        emoji: '🐅', name: '호랑이 독립가', color: '#E07B39',
+        slogan: '"나는 나야"',
+        img: { main: IMG_BASE + 'tiger_main.png.png', bed1: IMG_BASE + 'tiger_bed1.png.png', bed2: IMG_BASE + 'tiger_bed2.png.png', bed3: IMG_BASE + 'tiger_bed3.png.png' },
+        desc: '독립적이고 자기 주관이 확실해요. 연애해도 "나"를 잃지 않고, 연인에게도 같은 걸 기대해요. 쿨한 것 같지만 좋아하는 사람에겐 의외로 다정하고, 묵묵히 곁에 있어주는 타입.',
+        traits: ['독립적 성향', '쿨한 매력', '자기 주관', '묵묵한 사랑'],
+        idealMale: ['자기 일 열심히 하는 사람', '매달리지 않는 쿨한 타입', '서로 존중하는 관계', '간섭 안 하고 믿어주는 사람', '가끔 다정함 보여주는 반전'],
+        idealFemale: ['자기 삶이 있는 사람', '의존 안 하고 독립적인 타입', '서로 공간 존중하는 관계', '쿨하지만 챙겨주는 사람', '말보다 행동하는 스타일'],
+        scenario: ['📅 평일: 각자 바쁘게 지내다 저녁에 연락', '🏃 주말: 같이 운동 or 각자 취미', '😰 연인 힘들 때: 말없이 옆에 있어줌', '💕 표현: 쿨한 척하다 갑자기 손잡기'],
+        bed: [
+          { name: '본능 열정형', pct: 55, desc: ['직감대로 행동', '강렬한 에너지', '말보다 행동', '쿨하게 시작'] },
+          { name: '독립 존중형', pct: 30, desc: ['서로 편안하게', '강요 없는 진행', '각자 만족 추구'] },
+          { name: '은밀 다정형', pct: 15, desc: ['겉과 다른 속', '의외로 따뜻함', '끝나고 안아주기'] }
+        ]
+      },
+      elephant: {
+        emoji: '🐘', name: '코끼리 수호자', color: '#A0A0A0',
+        slogan: '"항상 여기 있어"',
+        img: { main: IMG_BASE + 'elephant_main.png.png', bed1: IMG_BASE + 'elephant_bed1.png.png', bed2: IMG_BASE + 'elephant_bed2.png.png', bed3: IMG_BASE + 'elephant_bed3.png.png' },
+        desc: '한결같은 사랑을 주는 든든한 타입이에요. 약속은 무조건 지키고, 연인과의 추억을 소중히 간직해요. 급한 불보다 느린 거북이 스타일이지만, 결국 끝까지 함께하는 건 코끼리예요.',
+        traits: ['한결같은 사랑', '약속 중시', '추억 간직', '끝까지 함께'],
+        idealMale: ['변하지 않는 한결같은 사람', '믿을 수 있는 신뢰감', '약속 잘 지키는 타입', '느리지만 확실한 사랑', '오래 함께할 수 있는 안정감'],
+        idealFemale: ['든든하고 믿음직한 사람', '말보다 행동으로 증명', '기념일 안 까먹는 꼼꼼함', '급하지 않게 기다려주는 인내', '평생 함께할 파트너 느낌'],
+        scenario: ['📅 평일: 정해진 시간에 굿나잇 콜', '🍳 주말: 기념일 코스 재현 데이트', '😰 연인 힘들 때: 묵묵히 곁에서 버팀목', '💕 표현: "작년 이 날 우리 뭐 했는지 알아?"'],
+        bed: [
+          { name: '안정 헌신형', pct: 65, desc: ['익숙한 패턴 선호', '편안함이 최고', '서두르지 않음', '연인 만족 우선'] },
+          { name: '로맨틱 추억형', pct: 25, desc: ['기념일 특별하게', '분위기 조성', '의미 부여'] },
+          { name: '숨은 열정형', pct: 10, desc: ['가끔 예상 못한 시도', '마음 열면 적극적', '의외의 모습'] }
+        ]
+      }
+    };
+
+    // ============================================
+    // 심리 유형 정의
+    // ============================================
+    var psychTypes = {
+      attach: {
+        anxious: { name: '불안형', desc: '확인받고 싶어하는 타입. 연락 늦으면 불안하고, 사랑 확인이 필요해요.', icon: '😰' },
+        secure: { name: '안정형', desc: '신뢰하고 기다릴 줄 아는 타입. 관계에 확신이 있어요.', icon: '😊' },
+        avoidant: { name: '회피형', desc: '독립적 공간이 필요한 타입. 너무 밀착되면 부담스러워요.', icon: '🚶' }
+      },
+      love: {
+        words: { name: '언어형', desc: '"사랑해" 말로 표현하고, 말로 듣고 싶어요.', icon: '💬' },
+        acts: { name: '행동형', desc: '해주는 것으로 사랑을 증명하고, 그걸로 받고 싶어요.', icon: '🎁' },
+        touch: { name: '스킨십형', desc: '손잡고 안는 게 최고의 사랑 표현이에요.', icon: '🤗' },
+        time: { name: '시간형', desc: '함께하는 시간이 곧 사랑이에요.', icon: '⏰' }
+      },
+      conflict: {
+        fight: { name: '직면형', desc: '바로 말하고 해결해야 직성이 풀려요.', icon: '🔥' },
+        flight: { name: '회피형', desc: '냉각기가 필요해요. 시간이 약이에요.', icon: '❄️' },
+        compromise: { name: '타협형', desc: '중간점 찾아서 빨리 화해하고 싶어요.', icon: '🤝' }
+      }
+    };
+
+    // ============================================
+    // 상태
+    // ============================================
+    var state = {
+      page: 'landing',
+      gender: null,
+      nickname: '',
+      currentQ: 0,
+      answers: [],
+      premiumAnswers: [],
+      animalCode: null,
+      psychProfile: null,
+      isPremium: false,
+      isCompatibility: false,
+      sharedForFree: localStorage.getItem('shared_free') === 'true',
+      inviteCode: inviteCode,
+      inviterData: null,
+      myInviteCode: null
+    };
+
+    // 복구
+    try {
+      var saved = localStorage.getItem('love_animal_v4');
+      if (saved) {
+        var d = JSON.parse(saved);
+        Object.assign(state, d);
+      }
+    } catch(e) {}
+
+    // 결제 후 복귀
+    if (paidType === 'premium') {
+      state.isPremium = true;
+      state.page = 'premium_test';
+      state.currentQ = 0;
+      state.premiumAnswers = [];
+    }
+    if (paidType === 'compatibility') {
+      state.isCompatibility = true;
+      state.page = 'create_invite';
+    }
+    if (paidType === 'bundle') {
+      state.isPremium = true;
+      state.isCompatibility = true;
+      state.page = 'premium_test';
+      state.currentQ = 0;
+      state.premiumAnswers = [];
+    }
+    if (inviteCode && !paidType) {
+      state.page = 'invite_landing';
+      loadInviterData();
+    }
+
+    // ============================================
+    // 유틸리티
+    // ============================================
+    function saveState() {
+      try {
+        localStorage.setItem('love_animal_v4', JSON.stringify({
+          gender: state.gender, nickname: state.nickname,
+          answers: state.answers, premiumAnswers: state.premiumAnswers,
+          animalCode: state.animalCode, psychProfile: state.psychProfile,
+          isPremium: state.isPremium, isCompatibility: state.isCompatibility,
+          myInviteCode: state.myInviteCode
+        }));
+      } catch(e) {}
+    }
+
+    function generateCode() {
+      var c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789', r = '';
+      for (var i = 0; i < 6; i++) r += c[Math.floor(Math.random() * c.length)];
+      return r;
+    }
+
+    // 동물 계산
+    function calculateAnimal(answers) {
+      var scores = { attach: 0, devote: 0, comm: 0, conflict: 0, life: 0, love: 0, intimate: 0 };
+      var allQ = freeQuestions.concat(premiumQuestions);
+      
+      answers.forEach(function(a, i) {
+        var q = allQ[i];
+        if (!q) return;
+        if (a === 'A') scores[q.axis] = (scores[q.axis] || 0) + 1;
+      });
+
+      var total = scores.attach + scores.devote + scores.comm + scores.life + scores.intimate;
+      
+      // 동물 결정 로직
+      if (scores.devote >= 3 && scores.comm >= 2) return 'wolf';
+      if (scores.life >= 4 && scores.intimate >= 3) return 'dolphin';
+      if (scores.comm <= 1 && scores.conflict <= 1) return 'panda';
+      if (scores.comm >= 3 && scores.devote >= 2) return 'lion';
+      if (scores.attach <= 2 && scores.comm <= 2) return 'owl';
+      if (total >= 12 && total <= 18) return 'otter';
+      if (scores.attach <= 2 && scores.life >= 3) return 'tiger';
+      return 'elephant';
+    }
+
+    // 심리 유형 계산
+    function calculatePsych(answers) {
+      var attachA = 0;
+      [0, 9, 11, 13, 16, 22].forEach(function(i) {
+        if (answers[i] === 'A') attachA++;
+      });
+      
+      var attach = attachA >= 4 ? 'anxious' : attachA <= 1 ? 'avoidant' : 'secure';
+      var love = answers[6] === 'A' ? 'words' : answers[7] === 'A' ? 'touch' : 'acts';
+      var conflict = answers[3] === 'A' ? 'fight' : 'flight';
+      
+      return { attach: attach, love: love, conflict: conflict };
+    }
+
+    // 궁합 점수
+    function calcCompatScore(a1, a2) {
+      var base = 65;
+      if (a1 === a2) base += 10;
+      var good = [['wolf','panda'],['lion','panda'],['dolphin','otter'],['owl','elephant'],['tiger','dolphin']];
+      good.forEach(function(pair) {
+        if ((a1 === pair[0] && a2 === pair[1]) || (a1 === pair[1] && a2 === pair[0])) base += 15;
+      });
+      return Math.min(99, base + Math.floor(Math.random() * 10));
+    }
+
+    // Supabase
+    async function loadInviterData() {
+      if (!db || !inviteCode) return;
+      try {
+        var r = await db.from('pair_sessions').select('*').eq('invite_code', inviteCode).single();
+        if (r.data) {
+          state.inviterData = {
+            nickname: r.data.inviter_nickname,
+            animalCode: r.data.inviter_type_code,
+            answers: r.data.inviter_answers,
+            pairId: r.data.id
+          };
+          render();
+        }
+      } catch(e) { console.log(e); }
+    }
+
+    async function createInvite() {
+      var code = generateCode();
+      state.myInviteCode = code;
+      saveState();
+      if (!db) return code;
+      try {
+        await db.from('pair_sessions').insert({
+          inviter_nickname: state.nickname,
+          inviter_type_code: state.animalCode,
+          inviter_answers: state.answers,
+          invite_code: code,
+          status: 'pending'
+        });
+      } catch(e) { console.log(e); }
+      return code;
+    }
+
+    async function completeCompat() {
+      if (!db || !state.inviterData) return;
+      try {
+        await db.from('pair_sessions').update({
+          invitee_nickname: state.nickname,
+          invitee_type_code: state.animalCode,
+          invitee_answers: state.answers,
+          status: 'completed'
+        }).eq('id', state.inviterData.pairId);
+      } catch(e) { console.log(e); }
+    }
+
+    // SNS 공유
+    function shareToSNS(platform) {
+      var animal = animals[state.animalCode];
+      var text = encodeURIComponent(
+        animal.emoji + ' 나의 연애 동물은 "' + animal.name + '"!\n\n' +
+        animal.slogan + '\n\n' +
+        '너의 연애 동물은? 👉 ' + location.origin + location.pathname + '\n' +
+        '#연애동물테스트 #밸런스게임'
+      );
+      var url = encodeURIComponent(location.origin + location.pathname);
+      
+      var links = {
+        instagram: 'instagram://',
+        twitter: 'https://twitter.com/intent/tweet?text=' + text,
+        facebook: 'https://www.facebook.com/sharer/sharer.php?u=' + url + '&quote=' + text,
+        kakaotalk: 'kakaotalk://'
+      };
+
+      // 이미지 저장
+      downloadResultImage();
+      
+      // SNS 이동
+      setTimeout(function() {
+        if (platform === 'instagram' || platform === 'kakaotalk') {
+          alert('📸 이미지가 저장되었어요!\n\n' + (platform === 'instagram' ? '인스타그램' : '카카오톡') + '에서 공유해주세요 💕');
+        }
+        window.open(links[platform], '_blank');
+        
+        // 공유 완료 처리
+        localStorage.setItem('shared_free', 'true');
+        state.sharedForFree = true;
+        render();
+      }, 500);
+    }
+
+    function copyLink() {
+      var url = location.origin + location.pathname;
+      navigator.clipboard.writeText(url).then(function() {
+        alert('✅ 링크가 복사되었어요!\n친구에게 공유하면 심층분석이 무료!');
+        localStorage.setItem('shared_free', 'true');
+        state.sharedForFree = true;
+        render();
+      });
+    }
+
+    function downloadResultImage() {
+      var el = document.getElementById('result-card');
+      if (!el || !window.html2canvas) return;
+      html2canvas(el, { scale: 2, backgroundColor: '#fff' }).then(function(canvas) {
+        var link = document.createElement('a');
+        link.download = '연애동물_' + state.nickname + '.png';
+        link.href = canvas.toDataURL();
+        link.click();
+      });
+    }
+
+    // ============================================
+    // 렌더링
+    // ============================================
+    function render() {
+      var app = document.getElementById('app');
+      if (!app) return;
+
+      // 랜딩
+      if (state.page === 'landing') {
+        app.innerHTML = '<div class="min-h-screen flex flex-col items-center justify-center px-4 py-8">' +
+          '<div class="text-4xl sm:text-5xl mb-4 flex gap-2"><span class="float">🐺</span><span class="float" style="animation-delay:0.1s">🐬</span><span class="float" style="animation-delay:0.2s">🐼</span><span class="float" style="animation-delay:0.3s">🦁</span></div>' +
+          '<h1 class="text-2xl sm:text-3xl font-bold text-gray-800 text-center mb-2">나의 연애 동물은?</h1>' +
+          '<p class="text-gray-500 text-sm mb-2">심리학 기반 밸런스 게임 35문제</p>' +
+          '<p class="text-purple-600 font-bold text-sm mb-6">연애 유형 + 심리 분석 + 🔥침대 궁합</p>' +
+          '<button onclick="goGender()" class="gradient-bg text-white text-lg font-bold px-10 py-4 rounded-full shadow-lg pulse-glow">무료로 시작하기</button>' +
+          '<p class="text-xs text-gray-400 mt-4">⏱️ 3분 · 100만명이 테스트함</p></div>';
+      }
+
+      // 성별 선택
+      else if (state.page === 'gender') {
+        app.innerHTML = '<div class="min-h-screen flex flex-col items-center justify-center px-4">' +
+          '<div class="text-5xl mb-6">💕</div>' +
+          '<h2 class="text-xl sm:text-2xl font-bold text-gray-800 mb-2">당신의 성별은?</h2>' +
+          '<p class="text-gray-500 text-sm mb-8">이상형 결과에 반영돼요</p>' +
+          '<div class="flex gap-4 w-full max-w-xs">' +
+          '<button onclick="selectGender(\'female\')" class="flex-1 py-8 gradient-bg text-white font-bold rounded-2xl text-xl shadow-lg">👩 여자</button>' +
+          '<button onclick="selectGender(\'male\')" class="flex-1 py-8 gradient-bg-blue text-white font-bold rounded-2xl text-xl shadow-lg">👨 남자</button></div></div>';
+      }
+
+      // 닉네임
+      else if (state.page === 'nickname') {
+        app.innerHTML = '<div class="min-h-screen flex flex-col items-center justify-center px-4">' +
+          '<div class="text-5xl mb-6 float">💕</div>' +
+          '<h2 class="text-xl sm:text-2xl font-bold text-gray-800 mb-2">이름을 알려주세요</h2>' +
+          '<p class="text-gray-500 text-sm mb-6">결과에 표시돼요</p>' +
+          '<input type="text" id="nameInput" placeholder="이름 입력" maxlength="10" class="w-full max-w-xs px-6 py-4 text-lg text-center border-2 border-purple-200 rounded-2xl focus:border-purple-400 outline-none mb-6" onkeypress="if(event.key===\'Enter\')startTest()">' +
+          '<button onclick="startTest()" class="gradient-bg text-white px-12 py-4 rounded-full text-lg font-bold">시작하기</button></div>';
+        setTimeout(function() { var el = document.getElementById('nameInput'); if (el) el.focus(); }, 100);
+      }
+
+      // 초대 랜딩
+      else if (state.page === 'invite_landing') {
+        var inv = state.inviterData;
+        var a = inv ? animals[inv.animalCode] : null;
+        app.innerHTML = '<div class="min-h-screen flex flex-col items-center justify-center px-4 py-8">' +
+          '<div class="text-6xl mb-4 heartbeat">💕</div>' +
+          '<h1 class="text-xl sm:text-2xl font-bold text-center mb-2">' + (inv ? inv.nickname : '연인') + '님이<br>궁합 테스트를 보냈어요!</h1>' +
+          (a ? '<div class="bg-white rounded-2xl p-4 my-4 shadow-lg text-center"><span class="text-5xl">' + a.emoji + '</span><p class="font-bold mt-2">' + a.name + '</p></div>' : '') +
+          '<p class="text-gray-600 text-center mb-6 text-sm">테스트 완료하면<br><b class="text-purple-600">둘의 궁합</b>을 바로 확인!</p>' +
+          '<button onclick="goGender()" class="gradient-bg-couple text-white text-lg font-bold px-10 py-4 rounded-full shadow-lg">나도 테스트하기 💕</button>' +
+          '<p class="text-xs text-green-600 mt-4 font-bold">✅ 무료! 결제 없음</p></div>';
+      }
+
+      // FREE 테스트
+      else if (state.page === 'free_test') {
+        var q = freeQuestions[state.currentQ];
+        var pct = ((state.currentQ + 1) / 10) * 100;
+        app.innerHTML = '<div class="min-h-screen flex flex-col">' +
+          '<div class="h-2 bg-gray-200"><div class="h-full gradient-bg transition-all duration-300" style="width:' + pct + '%"></div></div>' +
+          '<div class="px-4 py-3 flex justify-between items-center">' +
+          '<span class="text-base font-bold text-gray-700">Q' + (state.currentQ + 1) + ' / 10</span>' +
+          '<span class="px-3 py-1 bg-purple-100 text-purple-600 rounded-full text-sm font-medium">' + q.cat + '</span></div>' +
+          '<div class="flex-1 flex flex-col items-center justify-center px-4 pb-8">' +
+          '<h2 class="text-lg sm:text-xl md:text-2xl font-bold text-gray-800 text-center mb-8 leading-relaxed">' + q.q + '</h2>' +
+          '<div class="w-full max-w-lg space-y-4">' +
+          '<button onclick="answer(\'A\')" class="choice-btn w-full p-5 sm:p-6 gradient-light-a rounded-2xl shadow-md border-2 border-transparent hover:border-pink-400 text-left">' +
+          '<div class="flex items-center gap-3"><span class="text-2xl">🅰️</span><span class="text-base sm:text-lg font-medium text-gray-800">' + q.a + '</span></div></button>' +
+          '<button onclick="answer(\'B\')" class="choice-btn w-full p-5 sm:p-6 gradient-light-b rounded-2xl shadow-md border-2 border-transparent hover:border-purple-400 text-left">' +
+          '<div class="flex items-center gap-3"><span class="text-2xl">🅱️</span><span class="text-base sm:text-lg font-medium text-gray-800">' + q.b + '</span></div></button>' +
+          '</div></div></div>';
+      }
+
+      // 프리미엄 테스트
+      else if (state.page === 'premium_test') {
+        var q = premiumQuestions[state.currentQ];
+        var pct = ((state.currentQ + 1) / 25) * 100;
+        app.innerHTML = '<div class="min-h-screen flex flex-col">' +
+          '<div class="h-2 bg-gray-200"><div class="h-full gradient-bg-gold transition-all duration-300" style="width:' + pct + '%"></div></div>' +
+          '<div class="px-4 py-3 flex justify-between items-center">' +
+          '<span class="text-base font-bold text-gray-700">심층 Q' + (state.currentQ + 1) + ' / 25</span>' +
+          '<span class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-sm font-medium">🔓 심층분석</span></div>' +
+          '<div class="flex-1 flex flex-col items-center justify-center px-4 pb-8">' +
+          '<h2 class="text-lg sm:text-xl md:text-2xl font-bold text-gray-800 text-center mb-8 leading-relaxed">' + q.q + '</h2>' +
+          '<div class="w-full max-w-lg space-y-4">' +
+          '<button onclick="answerPremium(\'A\')" class="choice-btn w-full p-5 sm:p-6 gradient-light-a rounded-2xl shadow-md border-2 border-transparent hover:border-yellow-400 text-left">' +
+          '<div class="flex items-center gap-3"><span class="text-2xl">🅰️</span><span class="text-base sm:text-lg font-medium text-gray-800">' + q.a + '</span></div></button>' +
+          '<button onclick="answerPremium(\'B\')" class="choice-btn w-full p-5 sm:p-6 gradient-light-b rounded-2xl shadow-md border-2 border-transparent hover:border-yellow-400 text-left">' +
+          '<div class="flex items-center gap-3"><span class="text-2xl">🅱️</span><span class="text-base sm:text-lg font-medium text-gray-800">' + q.b + '</span></div></button>' +
+          '</div></div></div>';
+      }
+
+      // 로딩
+      else if (state.page === 'loading') {
+        app.innerHTML = '<div class="min-h-screen flex flex-col items-center justify-center">' +
+          '<div class="text-6xl float mb-6">🔮</div>' +
+          '<p class="text-xl font-bold text-gray-800 mb-2">' + state.nickname + '님 분석중...</p>' +
+          '<p class="text-gray-500 text-sm">심리 유형 계산 중</p></div>';
+      }
+
+      // 무료 결과
+      else if (state.page === 'free_result') {
+        renderFreeResult();
+      }
+
+      // 프리미엄 결과
+      else if (state.page === 'premium_result') {
+        renderPremiumResult();
+      }
+
+      // 초대 링크 생성
+      else if (state.page === 'create_invite') {
+        var url = location.origin + location.pathname + '?invite=' + (state.myInviteCode || '...');
+        app.innerHTML = '<div class="min-h-screen flex flex-col items-center justify-center px-4 py-8">' +
+          '<div class="text-6xl mb-4 heartbeat">💕</div>' +
+          '<h1 class="text-xl sm:text-2xl font-bold text-center mb-2">궁합 테스트 준비 완료!</h1>' +
+          '<div class="bg-blue-50 rounded-xl p-4 my-4 max-w-sm">' +
+          '<p class="text-blue-800 text-sm font-bold mb-2">💡 확인 방법</p>' +
+          '<p class="text-blue-700 text-xs">연인이 테스트 완료하면<br><b>각자 페이지에서</b> 궁합 결과를 볼 수 있어요!</p></div>' +
+          '<div class="w-full max-w-md bg-white rounded-2xl shadow-lg p-5 mb-6">' +
+          '<p class="text-sm text-gray-500 mb-2">📋 초대 링크</p>' +
+          '<div class="bg-gray-100 rounded-xl p-3 break-all text-xs text-gray-700 mb-4">' + url + '</div>' +
+          '<button onclick="copyInviteLink(\'' + url + '\')" class="w-full py-3 gradient-bg text-white font-bold rounded-xl">📋 링크 복사해서 보내기</button></div>' +
+          '<button onclick="goMyResult()" class="text-purple-600 underline text-sm">내 결과 보기</button></div>';
+      }
+
+      // 궁합 결과
+      else if (state.page === 'compat_result') {
+        renderCompatResult();
+      }
+    }
+
+    // 무료 결과 렌더링
+    function renderFreeResult() {
+      var a = animals[state.animalCode];
+      var p = state.psychProfile;
+      var pa = psychTypes.attach[p.attach];
+      var pl = psychTypes.love[p.love];
+      var pc = psychTypes.conflict[p.conflict];
+      var ideal = state.gender === 'male' ? a.idealFemale : a.idealMale;
+
+      var app = document.getElementById('app');
+      app.innerHTML = '<div class="min-h-screen py-6 px-4"><div class="max-w-lg mx-auto">' +
+        
+        // 결과 카드 (캡쳐용)
+        '<div id="result-card" class="bg-white rounded-3xl shadow-xl overflow-hidden mb-4">' +
+        '<div class="py-6 px-5 text-center" style="background:linear-gradient(135deg,' + a.color + '40,' + a.color + '20)">' +
+        '<p class="text-gray-600 text-sm mb-1">' + state.nickname + '님의 연애 동물</p>' +
+        '<img src="' + a.img.main + '" alt="' + a.name + '" class="w-full max-w-xs mx-auto rounded-2xl shadow-lg my-3">' +
+        '<h2 class="text-2xl font-bold text-gray-800">' + a.name + '</h2>' +
+        '<p class="text-purple-600 font-medium mt-1">' + a.slogan + '</p></div>' +
+        
+        // 동물 설명 펼치기
+        '<div class="px-5 py-4 border-b">' +
+        '<button onclick="toggleExpand(\'animal-desc\')" class="w-full flex justify-between items-center">' +
+        '<span class="font-bold text-gray-800">📖 ' + a.name + '란?</span>' +
+        '<span class="text-gray-400" id="arrow-animal-desc">▼</span></button>' +
+        '<div id="animal-desc" class="expand-content text-sm text-gray-600 mt-3 leading-relaxed">' +
+        '<p>' + a.desc + '</p>' +
+        '<div class="flex flex-wrap gap-2 mt-3">' + a.traits.map(function(t) { return '<span class="px-2 py-1 bg-purple-100 text-purple-600 rounded-full text-xs">' + t + '</span>'; }).join('') + '</div></div></div>' +
+        
+        // 심리 분석
+        '<div class="px-5 py-4 border-b">' +
+        '<p class="font-bold text-gray-800 mb-3">🧠 심리 분석</p>' +
+        '<div class="space-y-3">' +
+        '<div class="flex items-center gap-3 p-3 bg-pink-50 rounded-xl"><span class="text-2xl">' + pa.icon + '</span><div><p class="font-bold text-sm">애착 유형: ' + pa.name + '</p><p class="text-xs text-gray-600">' + pa.desc + '</p></div></div>' +
+        '<div class="flex items-center gap-3 p-3 bg-purple-50 rounded-xl"><span class="text-2xl">' + pl.icon + '</span><div><p class="font-bold text-sm">사랑 언어: ' + pl.name + '</p><p class="text-xs text-gray-600">' + pl.desc + '</p></div></div>' +
+        '<div class="flex items-center gap-3 p-3 bg-blue-50 rounded-xl"><span class="text-2xl">' + pc.icon + '</span><div><p class="font-bold text-sm">갈등 스타일: ' + pc.name + '</p><p class="text-xs text-gray-600">' + pc.desc + '</p></div></div>' +
+        '</div></div>' +
+        
+        // 이상형
+        '<div class="px-5 py-4 border-b">' +
+        '<p class="font-bold text-gray-800 mb-3">💞 이상형 특징</p>' +
+        '<div class="space-y-2">' + ideal.map(function(i) { return '<p class="text-sm">• ' + i + '</p>'; }).join('') + '</div></div>' +
+        
+        // 연애 시나리오
+        '<div class="px-5 py-4 border-b">' +
+        '<p class="font-bold text-gray-800 mb-3">🌙 연애 시나리오</p>' +
+        '<div class="space-y-2">' + a.scenario.map(function(s) { return '<p class="text-sm">' + s + '</p>'; }).join('') + '</div></div>' +
+        
+        // 로맨스 성향 (일부 블러)
+        '<div class="px-5 py-4">' +
+        '<p class="font-bold text-red-500 mb-3">🔥 로맨스 성향</p>' +
+        '<div class="space-y-3">' +
+        '<div class="bg-red-50 rounded-xl overflow-hidden">' +
+        '<img src="' + a.img.bed1 + '" alt="' + a.bed[0].name + '" class="w-full">' +
+        '<div class="p-3"><p class="font-bold text-sm">' + a.bed[0].name + ' (' + a.bed[0].pct + '%)</p><div class="text-xs text-gray-600 mt-1">' + a.bed[0].desc.map(function(d) { return '<p>• ' + d + '</p>'; }).join('') + '</div></div></div>' +
+        '<div class="relative">' +
+        '<div class="bg-gray-50 rounded-xl overflow-hidden blur-lock">' +
+        '<img src="' + a.img.bed2 + '" alt="' + a.bed[1].name + '" class="w-full">' +
+        '<div class="p-3"><p class="font-bold text-sm">' + a.bed[1].name + '</p></div></div>' +
+        '<div class="absolute inset-0 flex items-center justify-center bg-black/20 rounded-xl"><span class="bg-white px-4 py-2 rounded-full text-sm font-bold shadow">🔒 심층분석에서 공개</span></div></div>' +
+        '</div></div></div>' +
+        
+        // SNS 공유 = 심층 무료
+        '<div class="bg-gradient-to-r from-green-400 to-emerald-500 rounded-2xl p-5 mb-4 text-white">' +
+        '<p class="font-bold text-lg mb-2">🎁 친구에게 공유하면</p>' +
+        '<p class="text-2xl font-bold mb-3">심층분석 25문제 무료!</p>' +
+        '<div class="grid grid-cols-5 gap-2">' +
+        '<button onclick="shareToSNS(\'instagram\')" class="bg-white/20 hover:bg-white/30 p-3 rounded-xl flex flex-col items-center"><span class="text-2xl">📷</span><span class="text-xs mt-1">인스타</span></button>' +
+        '<button onclick="shareToSNS(\'twitter\')" class="bg-white/20 hover:bg-white/30 p-3 rounded-xl flex flex-col items-center"><span class="text-2xl">🐦</span><span class="text-xs mt-1">X</span></button>' +
+        '<button onclick="shareToSNS(\'facebook\')" class="bg-white/20 hover:bg-white/30 p-3 rounded-xl flex flex-col items-center"><span class="text-2xl">📘</span><span class="text-xs mt-1">페북</span></button>' +
+        '<button onclick="shareToSNS(\'kakaotalk\')" class="bg-white/20 hover:bg-white/30 p-3 rounded-xl flex flex-col items-center"><span class="text-2xl">💬</span><span class="text-xs mt-1">카톡</span></button>' +
+        '<button onclick="copyLink()" class="bg-white/20 hover:bg-white/30 p-3 rounded-xl flex flex-col items-center"><span class="text-2xl">🔗</span><span class="text-xs mt-1">복사</span></button>' +
+        '</div>' +
+        (state.sharedForFree ? '<p class="text-center mt-3 font-bold">✅ 공유 완료! 심층분석 무료 해금!</p>' : '') +
+        '</div>' +
+        
+        // 결제 버튼
+        '<div class="space-y-3">' +
+        '<button onclick="goPay(\'compatibility\')" class="w-full py-5 gradient-bg-couple text-white font-bold rounded-2xl shadow-lg">' +
+        '<p class="text-lg">💕 연인과 궁합 보기</p>' +
+        '<p class="text-sm opacity-90">연인은 무료 테스트!</p>' +
+        '<p class="font-bold mt-1">3,000원</p></button>' +
+        
+        (state.sharedForFree ?
+          '<button onclick="startPremiumFree()" class="w-full py-5 gradient-bg-green text-white font-bold rounded-2xl shadow-lg">' +
+          '<p class="text-lg">🎁 심층분석 25문제</p>' +
+          '<p class="text-sm opacity-90">공유 감사! 무료로 진행</p>' +
+          '<p class="font-bold mt-1">무료</p></button>' :
+          '<button onclick="goPay(\'premium\')" class="w-full py-5 gradient-bg text-white font-bold rounded-2xl shadow-lg">' +
+          '<p class="text-lg">🔓 심층분석 25문제</p>' +
+          '<p class="text-sm opacity-90">침대 성향 100% + 상세 분석</p>' +
+          '<p class="font-bold mt-1">3,000원</p></button>') +
+        
+        '<button onclick="goPay(\'bundle\')" class="w-full py-5 gradient-bg-gold text-white font-bold rounded-2xl shadow-lg relative">' +
+        '<span class="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full">BEST</span>' +
+        '<p class="text-lg">💝 궁합 + 심층 번들</p>' +
+        '<p class="mt-1"><span class="line-through opacity-70">6,000원</span> → <b>5,000원</b></p></button>' +
+        '</div>' +
+        
+        '<button onclick="downloadResultImage()" class="w-full py-3 bg-purple-100 text-purple-600 rounded-2xl mt-3 mb-2">📥 이미지 저장</button>' +
+        '<button onclick="restart()" class="w-full py-2 text-gray-400 text-sm">처음부터</button>' +
+        '</div></div>';
+    }
+
+    // 프리미엄 결과 렌더링 (심층 분석)
+    function renderPremiumResult() {
+      var a = animals[state.animalCode];
+      var p = state.psychProfile;
+      var pa = psychTypes.attach[p.attach];
+      var pl = psychTypes.love[p.love];
+      var pc = psychTypes.conflict[p.conflict];
+      var ideal = state.gender === 'male' ? a.idealFemale : a.idealMale;
+
+      // 35문제 기반 상세 분석 데이터
+      var detailAnalysis = getDetailAnalysis(state.animalCode, p);
+
+      var app = document.getElementById('app');
+      app.innerHTML = '<div class="min-h-screen py-6 px-4"><div class="max-w-lg mx-auto">' +
+        
+        // 헤더 카드
+        '<div id="result-card" class="bg-white rounded-3xl shadow-xl overflow-hidden mb-4">' +
+        '<div class="py-6 px-5 text-center" style="background:linear-gradient(135deg,' + a.color + '40,' + a.color + '20)">' +
+        '<span class="px-3 py-1 bg-yellow-400 text-yellow-900 rounded-full text-xs font-bold">🔓 35문제 심층분석 완료</span>' +
+        '<p class="text-gray-600 text-sm mt-2 mb-1">' + state.nickname + '님의 연애 동물</p>' +
+        '<img src="' + a.img.main + '" alt="' + a.name + '" class="w-full max-w-xs mx-auto rounded-2xl shadow-lg my-3">' +
+        '<h2 class="text-2xl font-bold text-gray-800">' + a.name + '</h2>' +
+        '<p class="text-purple-600 font-medium mt-1">' + a.slogan + '</p></div>' +
+        
+        // 동물 설명
+        '<div class="px-5 py-4 border-b">' +
+        '<p class="text-sm text-gray-600 leading-relaxed">' + a.desc + '</p>' +
+        '<div class="flex flex-wrap gap-2 mt-3">' + a.traits.map(function(t) { return '<span class="px-2 py-1 bg-purple-100 text-purple-600 rounded-full text-xs">' + t + '</span>'; }).join('') + '</div></div>' +
+
+        // 🧠 심리 프로필 상세
+        '<div class="px-5 py-4 border-b">' +
+        '<p class="font-bold text-gray-800 mb-4">🧠 심리 프로필 <span class="text-xs bg-purple-500 text-white px-2 py-1 rounded-full ml-2">심층 분석</span></p>' +
+        
+        // 애착 유형
+        '<div class="mb-4">' +
+        '<div class="flex items-center gap-3 p-3 bg-pink-50 rounded-xl">' +
+        '<span class="text-3xl">' + pa.icon + '</span>' +
+        '<div class="flex-1">' +
+        '<p class="font-bold text-sm">애착 유형: ' + pa.name + '</p>' +
+        '<p class="text-xs text-gray-600 mt-1">' + pa.desc + '</p>' +
+        '<div class="mt-2 bg-white rounded-lg p-2">' +
+        '<p class="text-xs text-pink-600">' + detailAnalysis.attachDetail + '</p></div></div></div></div>' +
+        
+        // 사랑 언어
+        '<div class="mb-4">' +
+        '<div class="flex items-center gap-3 p-3 bg-purple-50 rounded-xl">' +
+        '<span class="text-3xl">' + pl.icon + '</span>' +
+        '<div class="flex-1">' +
+        '<p class="font-bold text-sm">사랑 언어: ' + pl.name + '</p>' +
+        '<p class="text-xs text-gray-600 mt-1">' + pl.desc + '</p>' +
+        '<div class="mt-2 bg-white rounded-lg p-2">' +
+        '<p class="text-xs text-purple-600">' + detailAnalysis.loveDetail + '</p></div></div></div></div>' +
+        
+        // 갈등 스타일
+        '<div class="mb-4">' +
+        '<div class="flex items-center gap-3 p-3 bg-blue-50 rounded-xl">' +
+        '<span class="text-3xl">' + pc.icon + '</span>' +
+        '<div class="flex-1">' +
+        '<p class="font-bold text-sm">갈등 스타일: ' + pc.name + '</p>' +
+        '<p class="text-xs text-gray-600 mt-1">' + pc.desc + '</p>' +
+        '<div class="mt-2 bg-white rounded-lg p-2">' +
+        '<p class="text-xs text-blue-600">' + detailAnalysis.conflictDetail + '</p></div></div></div></div>' +
+
+        // 추가 심리 지표
+        '<div class="grid grid-cols-2 gap-3">' +
+        '<div class="p-3 bg-red-50 rounded-xl text-center">' +
+        '<p class="text-xs text-gray-500">독점욕</p>' +
+        '<p class="text-lg font-bold text-red-500">' + detailAnalysis.possessive + '%</p>' +
+        '<div class="w-full bg-red-200 rounded-full h-2 mt-1"><div class="bg-red-500 h-2 rounded-full" style="width:' + detailAnalysis.possessive + '%"></div></div></div>' +
+        '<div class="p-3 bg-green-50 rounded-xl text-center">' +
+        '<p class="text-xs text-gray-500">헌신도</p>' +
+        '<p class="text-lg font-bold text-green-500">' + detailAnalysis.devotion + '%</p>' +
+        '<div class="w-full bg-green-200 rounded-full h-2 mt-1"><div class="bg-green-500 h-2 rounded-full" style="width:' + detailAnalysis.devotion + '%"></div></div></div>' +
+        '<div class="p-3 bg-yellow-50 rounded-xl text-center">' +
+        '<p class="text-xs text-gray-500">표현력</p>' +
+        '<p class="text-lg font-bold text-yellow-600">' + detailAnalysis.expression + '%</p>' +
+        '<div class="w-full bg-yellow-200 rounded-full h-2 mt-1"><div class="bg-yellow-500 h-2 rounded-full" style="width:' + detailAnalysis.expression + '%"></div></div></div>' +
+        '<div class="p-3 bg-indigo-50 rounded-xl text-center">' +
+        '<p class="text-xs text-gray-500">안정추구</p>' +
+        '<p class="text-lg font-bold text-indigo-500">' + detailAnalysis.stability + '%</p>' +
+        '<div class="w-full bg-indigo-200 rounded-full h-2 mt-1"><div class="bg-indigo-500 h-2 rounded-full" style="width:' + detailAnalysis.stability + '%"></div></div></div>' +
+        '</div></div>' +
+
+        // 💪 연애 강점 TOP 3
+        '<div class="px-5 py-4 border-b">' +
+        '<p class="font-bold text-gray-800 mb-3">💪 연애 강점 TOP 3</p>' +
+        '<div class="space-y-3">' +
+        detailAnalysis.strengths.map(function(s, i) {
+          return '<div class="flex gap-3 items-start">' +
+            '<span class="w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-xs font-bold">' + (i+1) + '</span>' +
+            '<div><p class="font-bold text-sm text-green-700">' + s.title + '</p>' +
+            '<p class="text-xs text-gray-600 mt-1">' + s.desc + '</p></div></div>';
+        }).join('') +
+        '</div></div>' +
+
+        // ⚠️ 주의할 점
+        '<div class="px-5 py-4 border-b">' +
+        '<p class="font-bold text-gray-800 mb-3">⚠️ 주의할 점</p>' +
+        '<div class="space-y-3">' +
+        detailAnalysis.warnings.map(function(w) {
+          return '<div class="p-3 bg-orange-50 rounded-xl">' +
+            '<p class="font-bold text-sm text-orange-700">⚠️ ' + w.title + '</p>' +
+            '<p class="text-xs text-gray-600 mt-1">' + w.desc + '</p>' +
+            '<p class="text-xs text-orange-600 mt-2">💡 해결법: ' + w.solution + '</p></div>';
+        }).join('') +
+        '</div></div>' +
+
+        // 💞 이상형 완벽 분석
+        '<div class="px-5 py-4 border-b">' +
+        '<p class="font-bold text-gray-800 mb-3">💞 이상형 완벽 분석</p>' +
+        '<div class="space-y-3">' +
+        '<div class="p-3 bg-pink-50 rounded-xl">' +
+        '<p class="font-bold text-sm text-pink-700">✨ 끌리는 유형</p>' +
+        '<div class="mt-2 space-y-1">' + ideal.map(function(i) { return '<p class="text-xs">• ' + i + '</p>'; }).join('') + '</div></div>' +
+        '<div class="p-3 bg-gray-50 rounded-xl">' +
+        '<p class="font-bold text-sm text-gray-700">🚫 피해야 할 유형</p>' +
+        '<div class="mt-2 space-y-1">' + detailAnalysis.avoidTypes.map(function(t) { return '<p class="text-xs">• ' + t + '</p>'; }).join('') + '</div></div>' +
+        '</div></div>' +
+
+        // 📅 1년 연애 로드맵
+        '<div class="px-5 py-4 border-b">' +
+        '<p class="font-bold text-gray-800 mb-3">📅 1년 연애 로드맵</p>' +
+        '<div class="space-y-3">' +
+        '<div class="p-3 bg-pink-50 rounded-xl border-l-4 border-pink-400">' +
+        '<p class="font-bold text-sm">🌸 1-3개월: 설렘기</p>' +
+        '<p class="text-xs text-gray-600 mt-1">' + detailAnalysis.roadmap.phase1 + '</p></div>' +
+        '<div class="p-3 bg-purple-50 rounded-xl border-l-4 border-purple-400">' +
+        '<p class="font-bold text-sm">💜 3-6개월: 안정기</p>' +
+        '<p class="text-xs text-gray-600 mt-1">' + detailAnalysis.roadmap.phase2 + '</p></div>' +
+        '<div class="p-3 bg-blue-50 rounded-xl border-l-4 border-blue-400">' +
+        '<p class="font-bold text-sm">💙 6-12개월: 성숙기</p>' +
+        '<p class="text-xs text-gray-600 mt-1">' + detailAnalysis.roadmap.phase3 + '</p></div>' +
+        '</div></div>' +
+
+        // 🌙 연애 시나리오
+        '<div class="px-5 py-4 border-b">' +
+        '<p class="font-bold text-gray-800 mb-3">🌙 일상 연애 시나리오</p>' +
+        '<div class="space-y-2">' + a.scenario.map(function(s) { return '<p class="text-sm">' + s + '</p>'; }).join('') + '</div></div>' +
+
+        // 🔥 로맨스 성향 (100% 공개)
+        '<div class="px-5 py-4">' +
+        '<p class="font-bold text-red-500 mb-3">🔥 로맨스 성향 <span class="text-xs bg-red-500 text-white px-2 py-1 rounded-full ml-2">100% 공개</span></p>' +
+        '<div class="space-y-4">' +
+        a.bed.map(function(b, i) {
+          var bgColors = ['bg-red-50', 'bg-orange-50', 'bg-pink-50'];
+          var bedImgs = [a.img.bed1, a.img.bed2, a.img.bed3];
+          return '<div class="' + bgColors[i] + ' rounded-xl overflow-hidden">' +
+            '<img src="' + bedImgs[i] + '" alt="' + b.name + '" class="w-full">' +
+            '<div class="p-4">' +
+            '<div class="flex justify-between items-center mb-2">' +
+            '<p class="font-bold text-sm">' + b.name + '</p>' +
+            '<span class="text-lg font-bold text-red-500">' + b.pct + '%</span></div>' +
+            '<div class="w-full bg-red-200 rounded-full h-2 mb-3"><div class="bg-red-500 h-2 rounded-full" style="width:' + b.pct + '%"></div></div>' +
+            '<div class="text-xs text-gray-600 space-y-1">' + b.desc.map(function(d) { return '<p>• ' + d + '</p>'; }).join('') + '</div></div></div>';
+        }).join('') +
+        '</div></div>' +
+        
+        '</div>' +
+        
+        // 궁합 버튼
+        (state.isCompatibility ? '' :
+          '<button onclick="goPay(\'compatibility\')" class="w-full py-5 gradient-bg-couple text-white font-bold rounded-2xl shadow-lg mb-4">' +
+          '<p class="text-lg">💕 연인과 궁합도 확인</p>' +
+          '<p class="text-sm opacity-90">연인은 무료!</p>' +
+          '<p class="font-bold mt-1">3,000원</p></button>') +
+        
+        '<button onclick="shareResult()" class="w-full py-3 bg-white border text-gray-600 rounded-2xl mb-2">📱 결과 공유</button>' +
+        '<button onclick="downloadResultImage()" class="w-full py-3 bg-purple-100 text-purple-600 rounded-2xl mb-2">📥 이미지 저장</button>' +
+        '<button onclick="restart()" class="w-full py-2 text-gray-400 text-sm">처음부터</button>' +
+        '</div></div>';
+    }
+
+    // 상세 분석 데이터 생성
+    function getDetailAnalysis(animalCode, psych) {
+      var analyses = {
+        wolf: {
+          attachDetail: '당신은 연인에게 확실한 사랑 확인을 원해요. "나 사랑해?" 자주 묻고, 연인의 반응에 민감하게 반응해요. 이건 사랑이 깊다는 증거!',
+          loveDetail: '말로 표현하는 것도 좋지만, 행동으로 보여주는 걸 더 중요시해요. 힘들 때 달려가고, 아플 때 간호하는 게 진짜 사랑이에요.',
+          conflictDetail: '싸우면 바로 해결해야 직성이 풀려요. 냉전은 못 참아요. 하지만 너무 다그치면 상대가 지칠 수 있으니 한 템포 쉬어가는 것도 필요해요.',
+          possessive: 78, devotion: 92, expression: 85, stability: 65,
+          strengths: [
+            { title: '헌신적인 보호본능', desc: '연인이 힘들면 모든 걸 제쳐두고 달려가요. 새벽 3시 전화도 OK!' },
+            { title: '확실한 사랑 표현', desc: '"사랑해"를 말로, 행동으로 확실하게 보여줘요. 연인이 불안할 틈이 없어요.' },
+            { title: '책임감 있는 파트너', desc: '한번 시작한 연애는 끝까지 책임져요. 어려운 상황도 함께 헤쳐나가요.' }
+          ],
+          warnings: [
+            { title: '과한 독점욕 주의', desc: '사랑이 깊은 만큼 질투도 강해요. 연인의 모든 걸 알고 싶어하죠.', solution: '연인에게도 개인 시간과 공간이 필요해요. 신뢰를 보여주세요.' },
+            { title: '번아웃 위험', desc: '연인을 위해 너무 많이 희생하다 지칠 수 있어요.', solution: '나 자신도 챙기세요. 건강한 내가 있어야 연인도 지킬 수 있어요.' }
+          ],
+          avoidTypes: ['연락이 뜸한 회피형', '감정 표현이 서투른 타입', '자유를 최우선시하는 타입'],
+          roadmap: {
+            phase1: '강렬한 어필로 상대 마음을 사로잡아요. 하지만 너무 빠르게 올인하면 부담될 수 있으니 페이스 조절이 필요해요.',
+            phase2: '서로의 일상에 깊이 스며들어요. 이 시기에 독점욕을 잘 조절하면 관계가 더 깊어져요.',
+            phase3: '믿음직한 파트너로 인정받아요. 권태기가 와도 꾸준한 노력으로 극복할 수 있어요.'
+          }
+        },
+        dolphin: {
+          attachDetail: '자유로운 영혼이지만 사랑하는 사람에겐 충분히 애정을 줘요. 다만 너무 구속하면 답답해하니 적당한 거리감이 필요해요.',
+          loveDetail: '재미있는 경험을 함께 나누는 게 최고의 사랑 표현이에요. 새로운 맛집, 여행, 액티비티... 함께하는 모든 순간이 사랑이에요!',
+          conflictDetail: '싸움도 빨리 풀어버리는 타입. 무거운 분위기를 싫어해서 유머로 넘기려 해요. 하지만 가끔은 진지하게 대화할 필요도 있어요.',
+          possessive: 35, devotion: 70, expression: 95, stability: 45,
+          strengths: [
+            { title: '함께하면 즐거운 사람', desc: '어딜 가든 뭘 하든 재밌어요. 연인과의 일상이 모험이 돼요!' },
+            { title: '긍정 에너지 뿜뿜', desc: '힘들 때도 웃게 만들어줘요. 연인의 기분을 업시켜주는 능력자!' },
+            { title: '유연한 소통 능력', desc: '다양한 사람들과 잘 어울려요. 연인 친구들과도 금방 친해져요.' }
+          ],
+          warnings: [
+            { title: '진지함 부족 주의', desc: '뭐든 가볍게 넘기려다 중요한 문제를 놓칠 수 있어요.', solution: '연인이 진지할 때는 함께 진지해지세요. 모든 게 유머로 해결되진 않아요.' },
+            { title: '자유 vs 책임', desc: '자유를 너무 추구하다 연인이 불안해할 수 있어요.', solution: '자유로우면서도 연인에게 안정감을 주는 방법을 찾으세요.' }
+          ],
+          avoidTypes: ['너무 진지하고 무거운 타입', '질투가 심한 타입', '변화를 싫어하는 타입'],
+          roadmap: {
+            phase1: '신나는 데이트로 빠르게 친해져요! 새로운 경험을 함께 쌓으며 추억을 만들어요.',
+            phase2: '일상의 재미를 찾아요. 이 시기에 진지한 대화도 나누면 관계가 더 깊어져요.',
+            phase3: '장기 여행이나 큰 프로젝트를 함께 계획해보세요. 목표를 공유하면 유대감이 강해져요.'
+          }
+        },
+        panda: {
+          attachDetail: '안정적인 관계를 원하지만 너무 급한 건 부담스러워요. 천천히 마음을 여는 타입이라 시간이 필요해요.',
+          loveDetail: '함께 있는 시간 자체가 사랑이에요. 뭘 하지 않아도 옆에 있으면 행복해요. 말보다 존재감으로 사랑을 표현해요.',
+          conflictDetail: '갈등을 피하려는 경향이 있어요. 평화가 최고! 하지만 문제를 덮어두면 나중에 터질 수 있으니 조금씩 표현해보세요.',
+          possessive: 30, devotion: 75, expression: 55, stability: 95,
+          strengths: [
+            { title: '편안한 안식처', desc: '연인이 지쳤을 때 최고의 힐링이 돼요. 함께 있으면 마음이 편해져요.' },
+            { title: '갈등 없는 평화로운 관계', desc: '싸움이 별로 없어요. 이해하고 맞춰주는 능력이 뛰어나요.' },
+            { title: '꾸준한 사랑', desc: '급하게 타오르지 않지만 식지도 않아요. 오래가는 사랑을 해요.' }
+          ],
+          warnings: [
+            { title: '표현 부족 주의', desc: '마음은 있는데 표현을 안 해서 연인이 불안해할 수 있어요.', solution: '가끔은 말로, 행동으로 사랑을 표현해주세요. 연인도 확인이 필요해요.' },
+            { title: '갈등 회피의 함정', desc: '문제를 피하면 쌓여서 나중에 크게 터질 수 있어요.', solution: '작은 불만도 부드럽게 표현하는 연습을 해보세요.' }
+          ],
+          avoidTypes: ['너무 급하게 다가오는 타입', '갈등을 자주 만드는 타입', '감정 기복이 심한 타입'],
+          roadmap: {
+            phase1: '천천히 서로를 알아가요. 급하게 진도 나가려는 상대에겐 페이스 조절을 부탁하세요.',
+            phase2: '편안한 일상을 즐겨요. 집 데이트, 요리, 영화... 소소한 행복을 쌓아요.',
+            phase3: '안정적인 관계를 유지하면서도 가끔 새로운 자극을 줘보세요. 여행이나 취미 공유 추천!'
+          }
+        },
+        lion: {
+          attachDetail: '자존심이 강하지만 사랑하는 사람에겐 한없이 부드러워요. 무시당하면 상처받지만, 인정받으면 더 잘해주는 타입이에요.',
+          loveDetail: '연인을 대접하고 리드하는 걸 좋아해요. 데이트 계획, 선물, 서프라이즈... 연인을 위해 아낌없이 투자해요!',
+          conflictDetail: '리더십이 강해서 내 의견을 관철시키려 할 수 있어요. 하지만 연인 의견도 존중해야 관계가 건강해져요.',
+          possessive: 65, devotion: 85, expression: 90, stability: 70,
+          strengths: [
+            { title: '듬직한 리더십', desc: '우유부단함 없이 결정하고 이끌어요. 연인이 편하게 따라올 수 있어요.' },
+            { title: '아낌없는 투자', desc: '사랑하는 사람에겐 최고만 주고 싶어요. 선물, 데이트, 시간 모두요!' },
+            { title: '당당한 매력', desc: '자신감 넘치는 모습이 매력적이에요. 연인을 자랑스럽게 만들어줘요.' }
+          ],
+          warnings: [
+            { title: '자존심 충돌 주의', desc: '둘 다 고집이 세면 충돌이 생길 수 있어요.', solution: '가끔은 지는 것도 이기는 거예요. 연인의 의견을 먼저 들어보세요.' },
+            { title: '과시욕 조절', desc: 'SNS 과시나 물질적 표현에 치우칠 수 있어요.', solution: '돈보다 시간과 진심이 더 값져요. 소박한 데이트도 해보세요.' }
+          ],
+          avoidTypes: ['경쟁심이 강한 타입', '당신을 무시하는 타입', '우유부단한 타입'],
+          roadmap: {
+            phase1: '화려한 어필로 마음을 사로잡아요! 특별한 데이트와 서프라이즈로 감동을 줘요.',
+            phase2: '연인을 왕/여왕처럼 대접하면서도 가끔은 약한 모습도 보여주세요. 더 가까워져요.',
+            phase3: '함께 목표를 세우고 이뤄나가요. 커플 프로젝트가 유대감을 높여줘요.'
+          }
+        },
+        owl: {
+          attachDetail: '감정보다 이성적으로 관계를 바라봐요. 빠지면 깊이 빠지지만, 그 전까지는 신중하게 관찰해요.',
+          loveDetail: '깊은 대화가 최고의 사랑 표현이에요. 서로의 생각을 나누고, 이해하고, 성장하는 관계를 원해요.',
+          conflictDetail: '논리적으로 해결하려 해요. 감정적인 싸움보다 차분한 대화를 선호하지만, 가끔은 감정도 표현해야 해요.',
+          possessive: 40, devotion: 80, expression: 50, stability: 85,
+          strengths: [
+            { title: '깊이 있는 대화', desc: '수박 겉핥기 대화가 아닌, 진짜 속마음을 나눌 수 있어요.' },
+            { title: '신중한 선택', desc: '한번 선택하면 끝까지 가요. 가볍게 시작해서 가볍게 끝나지 않아요.' },
+            { title: '지적인 매력', desc: '함께 있으면 배우는 게 있어요. 성장하는 관계를 만들어요.' }
+          ],
+          warnings: [
+            { title: '감정 표현 부족', desc: '머리로는 사랑하는데 표현이 서툴 수 있어요.', solution: '가끔은 논리 없이 "그냥 사랑해"라고 말해보세요.' },
+            { title: '과한 분석', desc: '연애도 분석하려다 자연스러움을 잃을 수 있어요.', solution: '가끔은 생각 없이 즉흥적으로 행동해보세요!' }
+          ],
+          avoidTypes: ['얕은 대화만 하는 타입', '감정적으로 휘둘리는 타입', '생각 없이 행동하는 타입'],
+          roadmap: {
+            phase1: '서두르지 말고 천천히 서로를 알아가요. 깊은 대화로 마음을 열어요.',
+            phase2: '지적인 활동을 함께 해요. 책, 전시회, 강연... 함께 성장하는 경험이 좋아요.',
+            phase3: '감정 표현을 조금씩 늘려가요. 이성과 감성의 밸런스가 관계를 더 풍요롭게 해요.'
+          }
+        },
+        otter: {
+          attachDetail: '친구 같은 편안한 관계를 원해요. 무겁고 진지한 것보다 가볍고 즐거운 게 좋아요!',
+          loveDetail: '웃음이 사랑이에요! 함께 웃고, 장난치고, 즐기는 게 최고의 데이트예요.',
+          conflictDetail: '싸움도 웃기게 풀어버려요. 근데 가끔은 진지하게 대화해야 할 때도 있어요. 모든 게 장난은 아니니까요.',
+          possessive: 25, devotion: 65, expression: 95, stability: 50,
+          strengths: [
+            { title: '웃음 제조기', desc: '연인을 항상 웃게 만들어요. 힘든 날도 당신과 함께면 괜찮아져요.' },
+            { title: '스트레스 해소제', desc: '무거운 분위기를 가볍게 만들어요. 연인의 긴장을 풀어주는 능력자!' },
+            { title: '친구 같은 연인', desc: '편하게 뭐든 말할 수 있어요. 부담 없는 관계가 오래가요.' }
+          ],
+          warnings: [
+            { title: '진지함의 타이밍', desc: '중요한 순간에도 농담하면 상대가 상처받을 수 있어요.', solution: '연인이 진지할 때는 함께 진지해지세요. 타이밍이 중요해요.' },
+            { title: '깊이 부족 우려', desc: '항상 가볍기만 하면 관계가 깊어지기 어려워요.', solution: '가끔은 속마음을 진지하게 나눠보세요. 더 가까워질 거예요.' }
+          ],
+          avoidTypes: ['너무 진지하고 무거운 타입', '유머를 이해 못하는 타입', '예민하고 까다로운 타입'],
+          roadmap: {
+            phase1: '재미있는 데이트로 빠르게 친해져요! 웃음이 넘치는 시간을 보내요.',
+            phase2: '친구에서 연인으로... 가끔은 진지한 대화로 깊이를 더해요.',
+            phase3: '장난 속에서도 진심을 보여주세요. "장난인 것 같지만 진심이야"가 감동을 줘요.'
+          }
+        },
+        tiger: {
+          attachDetail: '독립적인 공간이 필요해요. 너무 밀착되면 부담스러워요. 하지만 사랑하면 나름대로 표현해요, 쿨하게.',
+          loveDetail: '말보다 행동이에요. 말은 별로 안 해도 필요할 때 옆에 있어주고, 묵묵히 지켜줘요.',
+          conflictDetail: '쿨하게 넘기려 하지만 속으론 신경 쓰여요. 겉과 속이 다를 때가 있어서 오해받기도 해요.',
+          possessive: 35, devotion: 70, expression: 40, stability: 75,
+          strengths: [
+            { title: '쿨한 매력', desc: '집착 없이 서로를 존중해요. 부담 없는 관계가 매력적이에요.' },
+            { title: '묵묵한 지지', desc: '말은 없지만 항상 곁에 있어요. 행동으로 사랑을 보여줘요.' },
+            { title: '독립적인 파트너', desc: '서로의 삶을 존중해요. 의존 없이 함께 성장하는 관계예요.' }
+          ],
+          warnings: [
+            { title: '표현 부족 주의', desc: '쿨한 척하다 연인이 사랑받는지 모를 수 있어요.', solution: '가끔은 쿨함을 내려놓고 다정하게 표현해보세요.' },
+            { title: '거리감 오해', desc: '독립적인 게 무관심으로 보일 수 있어요.', solution: '"혼자 있고 싶지만 네가 싫은 건 아니야"라고 말해주세요.' }
+          ],
+          avoidTypes: ['집착이 심한 타입', '매일 연락해야 하는 타입', '의존적인 타입'],
+          roadmap: {
+            phase1: '서로의 페이스를 존중하며 천천히 가까워져요. 급하게 다가가면 역효과!',
+            phase2: '각자의 시간을 존중하면서도 함께하는 시간의 질을 높여요.',
+            phase3: '쿨한 겉모습 속 따뜻한 속마음을 조금씩 보여주세요. 반전 매력에 빠질 거예요.'
+          }
+        },
+        elephant: {
+          attachDetail: '한번 마음 주면 변하지 않아요. 안정적이고 신뢰할 수 있는 관계를 원해요. 급한 변화보다 꾸준함이 좋아요.',
+          loveDetail: '약속을 지키고, 기념일을 챙기고, 추억을 간직하는 게 사랑이에요. 작은 것도 기억하고 소중히 해요.',
+          conflictDetail: '급하게 싸우기보다 시간을 두고 생각해요. 한번 상처받으면 오래가니 말을 조심해야 해요.',
+          possessive: 50, devotion: 90, expression: 60, stability: 95,
+          strengths: [
+            { title: '한결같은 사랑', desc: '변하지 않는 마음이 최고의 장점이에요. 오래 사랑받는 느낌을 줘요.' },
+            { title: '기억력 만렙', desc: '연인과의 모든 순간을 기억해요. "우리 작년 이맘때 뭐했는지 알아?"' },
+            { title: '믿음직한 파트너', desc: '약속은 무조건 지켜요. 연인이 믿고 의지할 수 있어요.' }
+          ],
+          warnings: [
+            { title: '변화 수용 필요', desc: '너무 익숙한 패턴만 고집하면 지루해질 수 있어요.', solution: '가끔은 새로운 시도를 해보세요. 작은 변화가 관계에 활력을 줘요.' },
+            { title: '과거 집착 주의', desc: '상처받은 기억을 오래 간직해서 가끔 꺼낼 수 있어요.', solution: '용서하고 넘어가는 연습을 해보세요. 과거보다 현재가 중요해요.' }
+          ],
+          avoidTypes: ['자주 마음이 바뀌는 타입', '약속을 안 지키는 타입', '새로운 자극만 찾는 타입'],
+          roadmap: {
+            phase1: '천천히 신뢰를 쌓아가요. 작은 약속부터 지키면서 믿음을 만들어요.',
+            phase2: '함께한 추억을 소중히 간직해요. 사진, 기념일, 특별한 장소... 둘만의 역사를 만들어요.',
+            phase3: '안정 속에서도 작은 서프라이즈를 줘보세요. 변함없으면서도 새로운 모습을 보여줘요.'
+          }
+        }
+      };
+      
+      return analyses[animalCode] || analyses.wolf;
+    }
+
+    // 궁합 결과 렌더링
+    function renderCompatResult() {
+      var me = { name: state.nickname, animal: animals[state.animalCode] };
+      var them = { name: state.inviterData.nickname, animal: animals[state.inviterData.animalCode] };
+      var score = calcCompatScore(state.animalCode, state.inviterData.animalCode);
+
+      var app = document.getElementById('app');
+      app.innerHTML = '<div class="min-h-screen py-6 px-4"><div class="max-w-lg mx-auto">' +
+        '<div id="result-card" class="bg-white rounded-3xl shadow-xl overflow-hidden mb-4">' +
+        '<div class="gradient-bg-couple py-8 px-6 text-center text-white">' +
+        '<p class="text-sm opacity-90 mb-2">💕 커플 궁합 결과</p>' +
+        '<div class="flex justify-center items-center gap-2 my-4">' +
+        '<div class="text-center"><img src="' + them.animal.img.main + '" alt="' + them.animal.name + '" class="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg"><p class="text-sm mt-1">' + them.name + '</p></div>' +
+        '<div class="text-4xl heartbeat">❤️</div>' +
+        '<div class="text-center"><img src="' + me.animal.img.main + '" alt="' + me.animal.name + '" class="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg"><p class="text-sm mt-1">' + me.name + '</p></div></div>' +
+        '<div class="text-5xl font-bold">' + score + '<span class="text-2xl">점</span></div>' +
+        '<p class="text-sm opacity-80 mt-2">' + them.animal.name + ' × ' + me.animal.name + '</p></div>' +
+        
+        '<div class="px-5 py-4">' +
+        '<p class="text-center text-gray-600">' + (score >= 85 ? '🔥 환상의 궁합!' : score >= 75 ? '💕 좋은 궁합!' : '💪 노력하면 더 좋아져요!') + '</p>' +
+        '</div></div>' +
+        
+        '<button onclick="shareCompatResult()" class="w-full py-3 bg-white border text-gray-600 rounded-2xl mb-2">📱 궁합 공유</button>' +
+        '<button onclick="downloadResultImage()" class="w-full py-3 bg-purple-100 text-purple-600 rounded-2xl mb-2">📥 이미지 저장</button>' +
+        '<button onclick="restart()" class="w-full py-2 text-gray-400 text-sm">처음부터</button>' +
+        '</div></div>';
+    }
+
+    // 펼치기/접기
+    function toggleExpand(id) {
+      var el = document.getElementById(id);
+      var arrow = document.getElementById('arrow-' + id);
+      if (el) {
+        el.classList.toggle('open');
+        if (arrow) arrow.textContent = el.classList.contains('open') ? '▲' : '▼';
+      }
+    }
+
+    // ============================================
+    // 이벤트
+    // ============================================
+    function goGender() { state.page = 'gender'; render(); }
+    function selectGender(g) { state.gender = g; state.page = 'nickname'; render(); }
+    function startTest() {
+      var el = document.getElementById('nameInput');
+      if (el && el.value.trim()) {
+        state.nickname = el.value.trim();
+        state.currentQ = 0;
+        state.answers = [];
+        state.page = 'free_test';
+        render();
+      }
+    }
+
+    function answer(c) {
+      state.answers.push(c);
+      if (state.currentQ < 9) { state.currentQ++; render(); }
+      else {
+        state.page = 'loading'; render();
+        setTimeout(function() {
+          state.animalCode = calculateAnimal(state.answers);
+          state.psychProfile = calculatePsych(state.answers);
+          saveState();
+          if (state.inviteCode && state.inviterData) {
+            completeCompat();
+            state.page = 'compat_result';
+          } else {
+            state.page = 'free_result';
+          }
+          render();
+        }, 2000);
+      }
+    }
+
+    function answerPremium(c) {
+      state.premiumAnswers.push(c);
+      if (state.currentQ < 24) { state.currentQ++; render(); }
+      else {
+        state.page = 'loading'; render();
+        setTimeout(function() {
+          var allAnswers = state.answers.concat(state.premiumAnswers);
+          state.animalCode = calculateAnimal(allAnswers);
+          state.psychProfile = calculatePsych(allAnswers);
+          state.answers = allAnswers;
+          saveState();
+          if (state.isCompatibility) {
+            createInvite().then(function() { state.page = 'create_invite'; render(); });
+          } else {
+            state.page = 'premium_result';
+            render();
+          }
+        }, 2000);
+      }
+    }
+
+    function startPremiumFree() {
+      state.isPremium = true;
+      state.currentQ = 0;
+      state.premiumAnswers = [];
+      state.page = 'premium_test';
+      render();
+    }
+
+    function goPay(t) { saveState(); location.href = LATPEED[t]; }
+    function goMyResult() { state.page = state.isPremium ? 'premium_result' : 'free_result'; render(); }
+    
+    function copyInviteLink(url) {
+      navigator.clipboard.writeText(url).then(function() {
+        alert('✅ 링크 복사됨!\n\n연인에게 보내세요 💕');
+      });
+    }
+
+    function shareResult() {
+      var a = animals[state.animalCode];
+      var t = a.emoji + ' ' + state.nickname + '의 연애 동물: ' + a.name + '\n' + a.slogan + '\n\n👉 ' + location.origin + location.pathname;
+      if (navigator.share) navigator.share({ title: '연애 동물 테스트', text: t });
+      else { navigator.clipboard.writeText(t); alert('복사됨!'); }
+    }
+
+    function shareCompatResult() {
+      var me = animals[state.animalCode];
+      var them = animals[state.inviterData.animalCode];
+      var t = '💕 ' + state.inviterData.nickname + ' × ' + state.nickname + ' 궁합!\n' + them.emoji + ' × ' + me.emoji + '\n\n👉 ' + location.origin + location.pathname;
+      if (navigator.share) navigator.share({ title: '커플 궁합', text: t });
+      else { navigator.clipboard.writeText(t); alert('복사됨!'); }
+    }
+
+    function restart() {
+      localStorage.removeItem('love_animal_v4');
+      localStorage.removeItem('shared_free');
+      state = { page: 'landing', gender: null, nickname: '', currentQ: 0, answers: [], premiumAnswers: [], animalCode: null, psychProfile: null, isPremium: false, isCompatibility: false, sharedForFree: false, inviteCode: null, inviterData: null, myInviteCode: null };
+      history.replaceState({}, '', location.pathname);
+      render();
+    }
+
+    // 초기화
+    (async function() {
+      if (state.page === 'create_invite' && state.isCompatibility && !state.myInviteCode) {
+        await createInvite();
+      }
+      render();
+    })();
+  </script>
+</body>
+</html>
